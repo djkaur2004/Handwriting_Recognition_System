@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Handwriting Recognition System</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- Fonts & CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style4.css') }}" />
+</head>
+
+<body class="dark-neon">
+    <!-- Top nav -->
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="logo">🖋️</span>
+            <span class="title">Handwriting Recognition</span>
+        </div>
+
+        <div class="nav-actions">
+            <button class="nav-btn" data-target="howto" onclick="openSection('howto')">How to use</button>
+            <button class="nav-btn" data-target="saved" onclick="openSection('saved')">Saved Predictions</button>
+            <button class="nav-btn" data-target="about" onclick="openSection('about')">About</button>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="container">
+        <header class="center-header">
+            <h1>🖋️ Handwriting Recognition System</h1>
+            <p class="intro-text">
+                Convert your handwritten text into editable digital text effortlessly.
+                Using an advanced CRNN-based AI model, our system accurately recognizes and transcribes handwriting from
+                images, saving you time. Ideal for students, professionals, and anyone who wants to digitize handwritten
+                content with precision.
+            </p>
+        </header>
+
+        <!-- Upload + Controls -->
+        <section class="upload-section">
+            <form id="uploadForm" action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data"
+                class="upload-form">
+                <div class="left-col">
+                    <label for="fileInput" class="upload-label" title="Click to upload or use camera">
+                        <input id="fileInput" name="file" type="file" accept="image/*" capture="environment" />
+                        <div class="upload-text">
+                            <strong>Upload image</strong>
+                            <small>or click to browse / use camera</small>
+                        </div>
+                    </label>
+
+                    <div class="controls-row">
+                        <button type="button" id="cameraBtn" class="action-btn">📷 Camera</button>
+                        <button type="button" id="browseBtn" class="action-btn">📁 Browse</button>
+                        <button type="submit" class="predict-btn">Predict</button>
+                    </div>
+
+                    <div class="hint">Tip: Use clear, well-lit images; crop tightly around the handwriting for best
+                        results.</div>
+                </div>
+
+                <div class="right-col">
+                    <div class="preview-wrap">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="none"
+                                viewBox="0 0 24 24" stroke="#61f0ff">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M4 7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M8 11l2 2 4-4 4 4" />
+                            </svg>
+                            <div class="small">Preview</div>
+                        </div>
+                        <img id="previewImage" src="" alt="preview" class="preview-image" />
+                    </div>
+
+                    <!-- Prediction card -->
+                    <div class="result-card" id="resultCard">
+                        <h3>Predicted Text</h3>
+                        <p class="prediction">{{ prediction or result or word_pred or "" }}</p>
+                        <p class="accuracy">Estimated Confidence: <strong>{{ accuracy or "" }}</strong></p>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- How to use / Saved / About sections -->
+        <section class="info-grid">
+            <div id="howto" class="info-card show">
+                <h2>How to Use</h2>
+                <ol>
+                    <li>Click the upload box or camera button to select/take a picture.</li>
+                    <li>Crop or ensure handwriting is prominent in the image.</li>
+                    <li>Click Predict and wait for the model to finish (loader will appear).</li>
+                    <li>Saved predictions can be viewed in Saved Predictions.</li>
+                </ol>
+            </div>
+
+            <div id="saved" class="info-card">
+                <h2>Saved Predictions</h2>
+                <div class="saved-list" id="savedList">
+                    {% if predictions_list %}
+                    {% for p in predictions_list %}
+                    <div class="saved-item">
+                        <div class="thumb">
+                            <img src="{{ url_for('static', filename=p.image) }}" alt="thumb">
+                        </div>
+                        <div class="meta">
+                            <div class="text">{{ p.text }}</div>
+                            <div class="sub">Confidence: {{ p.accuracy }}% • {{ p.timestamp }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty">No saved predictions yet</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="about" class="info-card">
+                <h2>About Us</h2>
+                <p>We are a team driven by curiosity and creativity, turning handwritten text into seamless digital understanding. With the power of deep learning and advanced OCR technology, we transform every stroke of a pen into precise, accessible information. Our goal is to make handwriting recognition smarter, faster, and beautifully intuitive for everyone.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loader overlay -->
+    <div id="loaderOverlay" class="loader-overlay hidden">
+        <div class="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">Analyzing image...</div>
+        </div>
+    </div>
+
+    <!-- Minimal scripts -->
+    <script>
+        // Elements
+        const fileInput = document.getElementById('fileInput');
+        const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const browseBtn = document.getElementById('browseBtn');
+        const loaderOverlay = document.getElementById('loaderOverlay');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // preview when file chosen - use FileReader to create a data URL so it can persist across reloads
+        fileInput.addEventListener('change', (e) => {
+            const f = e.target.files && e.target.files[0];
+            if (!f) {
+                // if no file selected, clear preview and storage
+                previewImage.src = '';
+                previewImage.classList.remove('visible');
+                previewPlaceholder.style.display = 'flex';
+                localStorage.removeItem('savedPreview');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                const dataUrl = evt.target.result;
+                previewImage.src = dataUrl;
+                previewImage.classList.add('visible');
+                previewPlaceholder.style.display = 'none';
+                // store immediately so it's available even if user clicks Predict quickly
+                try {
+                    localStorage.setItem('savedPreview', dataUrl);
+                } catch (err) {
+                    // If localStorage is full or unavailable, silently fail but preview still shows
+                    console.warn('Could not save preview to localStorage:', err);
+                }
+            };
+            reader.readAsDataURL(f);
+        });
+
+        // camera button triggers file input (mobile will open camera because of capture attribute)
+        cameraBtn.addEventListener('click', () => {
+            fileInput.setAttribute('accept', 'image/*');
+            fileInput.setAttribute('capture', 'environment'); // open rear camera on mobile
+            fileInput.click();
+        });
+
+        // browse button triggers file input for file picker
+        browseBtn.addEventListener('click', () => {
+            fileInput.removeAttribute('capture');
+            fileInput.click();
+        });
+
+        // show loader on form submit
+        uploadForm.addEventListener('submit', (e) => {
+            // only show loader if a file is selected
+            if (fileInput.files.length > 0 || previewImage.src) {
+                loaderOverlay.classList.remove('hidden');
+                // preview is already stored as data URL on change; no need to do anything else here
+            }
+        });
+
+        // simple section switcher for nav
+        function openSection(id) {
+            document.querySelectorAll('.info-card').forEach(el => el.classList.remove('show'));
+            const el = document.getElementById(id);
+            if (el) el.classList.add('show');
+            // scroll to info area
+            document.querySelector('.info-grid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // top nav sticky small-screen toggle (not a sidebar this time)
+        function toggleNav() {
+            document.querySelector('.nav-actions').classList.toggle('open');
+        }
+
+        // keyboard shortcut: press 'c' to open camera (quick shortcut)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'c' || e.key === 'C') {
+                cameraBtn.click();
+            }
+            // press 's' to go to Saved Predictions
+            if (e.key === 's' || e.key === 'S') {
+                openSection('saved');
+            }
+        });
+
+        /* ✅ Restore saved preview on load (if any) */
+        window.addEventListener("load", () => {
+            const saved = localStorage.getItem('savedPreview');
+            if (saved) {
+                previewImage.src = saved;
+                previewImage.classList.add('visible');
+                previewPlaceholder.style.display = 'none';
+            }
+        });
+
+        /* Optional: clear saved preview on explicit removal — handled on change when no file chosen */
+    </script>
+
+
+
+</body>
+
+<div id="chatbot-container" style="display: none;">
+    <div class="chatbot">
+        <h2>Alice</h2>
+        <div id="chatbox">
+            <div class="chatlog" id="chatlog"></div>
+            <input type="text" id="userInput" placeholder="Ask me anything...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='chatbot.js') }}" defer></script>
+
+<script>
+    function toggleChatbot() {
+        const chatbot = document.getElementById("chatbot-container");
+        chatbot.style.display = chatbot.style.display === "none" ? "block" : "none";
+    }
+</script>
+
+<!-- Chatbot Icon  -->
+<div class="floating-icon chatbot-icon" onclick="toggleChatbot()" title="Chat with us 🤖">🤖</div>
+
+
+</html>
