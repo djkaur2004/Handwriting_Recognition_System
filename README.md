@@ -45,6 +45,19 @@ Please refer to the original dataset source for access and usage guidelines.
 
 ---
 
+## 📁 Project Structure
+├── Project_5_run3.ipynb # Jupyter Notebook for model training and experimentation
+├── app4.py # Flask backend to run the web application
+├── chatbot.js # JavaScript logic for chatbot interactions
+├── index4.html # Frontend HTML file
+├── style4.css # CSS styling for the web interface
+├── README.md # Project documentation
+
+
+The project integrates a deep learning model with a Flask-based web interface, allowing users to interact with the handwriting recognition system through a browser.
+
+---
+
 ## ⚙️ Training & Evaluation
 - Trained for **30 epochs** using the **Adam optimizer**  
 - **Best model checkpoint** saved based on validation loss  
