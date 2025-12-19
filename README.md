@@ -34,7 +34,7 @@ The project demonstrates a complete OCR pipeline, from data preprocessing and mo
 - PyTorch, Torchvision  
 - NumPy, PIL  
 - Matplotlib, Scikit-learn  
-- CUDA (GPU acceleration, if available)
+- CUDA (GPU acceleration)
 
 ---
 
